@@ -46,7 +46,7 @@ machine** first. Once the user is confident in it, it should be **easy to deploy
 **Anti-goals: things that would make this a failure even if it technically worked**
 - Repeating meeting-bot69's trust bugs: identity taken from request bodies, unauthenticated webhooks, quota checks
   only in the browser, derived data (vectors) left behind after deletes.
-- Local setup that needs cloud accounts beyond MeetingBaaS (and an LLM API key, *only if* the user picks a hosted
+- Local setup that needs cloud accounts beyond MeetingBaaS (and an LLM API key, _only if_ the user picks a hosted
   provider).
 - Local and production setups that diverge, so "works locally" means nothing.
 - UI that looks like a generic template. It must follow the chosen DESIGN.md and pass the taste and animation
@@ -64,6 +64,7 @@ machine** first. Once the user is confident in it, it should be **easy to deploy
 ## 4. Phase 1: functional specification
 
 ### 4.1 Accounts and teams
+
 - Sign up and sign in with **Better Auth** **(decided)**, using email + password and Google sign-in.
 - Teams use Better Auth's **organization plugin** **(our call)**. A user creates a team, invites teammates by email
   (the invite email is caught by Mailpit locally), and can belong to several teams with a team switcher in the
@@ -88,6 +89,7 @@ machine** first. Once the user is confident in it, it should be **easy to deploy
   real team data.
 
 ### 4.2 Getting the bot into calls
+
 - **Calendar sync:** each user can "Connect Google Calendar". This is a separate OAuth step that requests
   `calendar.readonly`, so signing in never asks for calendar access **(our call)**. Upcoming events that have a
   Meet, Zoom or Teams link appear on Home with a **Bot on/off** toggle.
@@ -101,7 +103,7 @@ machine** first. Once the user is confident in it, it should be **easy to deploy
     - show a banner and send an email with a one-click reconnect
     - keep "send bot to link" working regardless
 
-    Before relying on it day-to-day, submit the app for Google verification. `calendar.readonly` is a *sensitive*
+    Before relying on it day-to-day, submit the app for Google verification. `calendar.readonly` is a _sensitive_
     scope, which needs a privacy policy, a homepage, a verified domain and a demo video. That's a deployment task,
     tracked in `docs/DEPLOYMENT.md`.
   - Sync runs every few minutes in the worker. Deleted or cancelled events are removed unless a bot was already
@@ -122,6 +124,7 @@ machine** first. Once the user is confident in it, it should be **easy to deploy
   status and the reason. Nothing fails silently.
 
 ### 4.3 After the call: processing pipeline
+
 1. The provider webhook arrives. It's **authenticated**, written to Postgres, and acknowledged immediately.
 2. A job is queued on SQS. The worker then runs **independent, idempotent steps**, each with its own status:
    - **ingest:** copy the recording from the provider to our S3, so links never expire; normalise the transcript
@@ -138,6 +141,7 @@ machine** first. Once the user is confident in it, it should be **easy to deploy
 4. The browser sees status changes live via SSE ("Processing…" → "Ready").
 
 ### 4.4 Meeting page (wireframe agreed in the visual companion)
+
 - A header with title, date, duration and speakers.
 - A **recording player** (video or audio). The transcript highlights and auto-scrolls with playback, and clicking
   a transcript line seeks the player.
@@ -153,6 +157,7 @@ machine** first. Once the user is confident in it, it should be **easy to deploy
 - Delete meeting (admin or creator). This removes the rows, S3 objects and vectors.
 
 ### 4.5 Ask AI (across meetings)
+
 - Chat across **all of the team's meetings**, with retrieval scoped to the team, and optional filters for date
   range, participant and specific meetings.
 - Answers cite the meeting and timestamp. Keep **multi-turn** context: send the recent conversation within a token
@@ -160,12 +165,14 @@ machine** first. Once the user is confident in it, it should be **easy to deploy
 - Chat threads are saved per user, so they can be revisited.
 
 ### 4.6 Search and browse
+
 - A meetings list with full-text search (Postgres `tsvector` over titles, summaries and transcripts) and filters:
   date range, participant, duration, status.
 - **Hybrid retrieval** for the AI: vector similarity combined with full-text rank **(our call)**. Meeting questions
   are full of names and ticket IDs, which pure embedding search handles poorly.
 
 ### 4.7 Speaker renaming (decided: in Phase 1)
+
 - On the meeting page, a user can rename a speaker label once (e.g. "Speaker 2" → "Ana"). The new name applies to
   every segment by that speaker in that meeting.
 - Optionally, link the speaker to a team member. Later meetings then suggest that mapping when the provider's label
@@ -175,6 +182,7 @@ machine** first. Once the user is confident in it, it should be **easy to deploy
   display name at read time. Chunk text sent to the LLM is rendered with current names when the prompt is built.
 
 ### 4.8 Settings
+
 - **Team AI settings (admin):**
   - provider and model for **chat**
   - provider and model for **embeddings**
@@ -191,20 +199,20 @@ machine** first. Once the user is confident in it, it should be **easy to deploy
 
 These come from `meeting-bot69/docs/ARCHITECTURE-CHANGES.md` and are design constraints, not suggestions:
 
-| Requirement | Origin |
-|---|---|
-| Identity only from a verified session or a verified webhook; never from a request body | D1 |
-| Every webhook is authenticated and fails closed when its secret isn't configured | D2 |
-| Every data read is authorized by team membership in one shared helper, never per-route ad hoc checks | D3, D15 |
-| OAuth `state` is a CSRF nonce bound to the session | D4 |
-| Webhooks acknowledge fast; heavy work goes through a queue with retries and a dead-letter queue | D7, D8 |
-| Pipeline steps are independent, idempotent and resumable; no placeholder content is written on failure | D8 |
-| Deleting a meeting deletes its vectors and S3 objects | D11 |
-| LLM extraction uses structured output with schema validation | D12 |
-| One source of truth for rules and config; no duplicated limits or schemas | D5, D14 |
-| Builds fail on type errors | D16 |
-| Third-party tokens and API keys are encrypted at rest | D17 |
-| Vectors live in Postgres (pgvector), not a separate vector DB | pgvector discussion |
+| Requirement                                                                                            | Origin              |
+| ------------------------------------------------------------------------------------------------------ | ------------------- |
+| Identity only from a verified session or a verified webhook; never from a request body                 | D1                  |
+| Every webhook is authenticated and fails closed when its secret isn't configured                       | D2                  |
+| Every data read is authorized by team membership in one shared helper, never per-route ad hoc checks   | D3, D15             |
+| OAuth `state` is a CSRF nonce bound to the session                                                     | D4                  |
+| Webhooks acknowledge fast; heavy work goes through a queue with retries and a dead-letter queue        | D7, D8              |
+| Pipeline steps are independent, idempotent and resumable; no placeholder content is written on failure | D8                  |
+| Deleting a meeting deletes its vectors and S3 objects                                                  | D11                 |
+| LLM extraction uses structured output with schema validation                                           | D12                 |
+| One source of truth for rules and config; no duplicated limits or schemas                              | D5, D14             |
+| Builds fail on type errors                                                                             | D16                 |
+| Third-party tokens and API keys are encrypted at rest                                                  | D17                 |
+| Vectors live in Postgres (pgvector), not a separate vector DB                                          | pgvector discussion |
 
 ---
 
@@ -212,24 +220,24 @@ These come from `meeting-bot69/docs/ARCHITECTURE-CHANGES.md` and are design cons
 
 ### 6.1 Stack
 
-| Concern | Choice | Status |
-|---|---|---|
-| Runtime and package manager | Bun | decided |
-| Monorepo | Bun workspaces + Turborepo (task pipeline and caching) | our call |
-| API | Elysia | decided |
-| API ↔ web typing | Eden Treaty (end-to-end types; no hand-written client) | our call |
-| Web | TanStack Router + Query + Form + Table, as a Vite single-page app | TanStack decided; SPA vs Start is our call |
-| Database | Postgres + pgvector | our call (pgvector discussion) |
-| ORM and migrations | Drizzle (native `vector` column type) | decided |
-| Auth | Better Auth (+ organization plugin) | decided |
-| Object storage | S3 API: **Floci** locally; AWS S3 or Cloudflare R2 in production | Floci decided |
-| Job queue | SQS API: **Floci** locally; AWS SQS in production | Floci decided; SQS is our call |
-| AI | `packages/ai` built on Vercel AI SDK providers (Ollama, OpenAI, OpenRouter, OpenAI-compatible) | providers decided; SDK is our call |
-| Meeting bot | MeetingBaaS behind a `MeetingBotProvider` interface | decided |
-| Email | SMTP (Mailpit locally) or Resend in production, behind one interface | our call |
-| Containers | Docker + Docker Compose | decided |
-| Reverse proxy and TLS | Caddy | our call |
-| Local webhook tunnel | cloudflared (optional Compose profile) | our call |
+| Concern                     | Choice                                                                                         | Status                                     |
+| --------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Runtime and package manager | Bun                                                                                            | decided                                    |
+| Monorepo                    | Bun workspaces + Turborepo (task pipeline and caching)                                         | our call                                   |
+| API                         | Elysia                                                                                         | decided                                    |
+| API ↔ web typing            | Eden Treaty (end-to-end types; no hand-written client)                                         | our call                                   |
+| Web                         | TanStack Router + Query + Form + Table, as a Vite single-page app                              | TanStack decided; SPA vs Start is our call |
+| Database                    | Postgres + pgvector                                                                            | our call (pgvector discussion)             |
+| ORM and migrations          | Drizzle (native `vector` column type)                                                          | decided                                    |
+| Auth                        | Better Auth (+ organization plugin)                                                            | decided                                    |
+| Object storage              | S3 API: **Floci** locally; AWS S3 or Cloudflare R2 in production                               | Floci decided                              |
+| Job queue                   | SQS API: **Floci** locally; AWS SQS in production                                              | Floci decided; SQS is our call             |
+| AI                          | `packages/ai` built on Vercel AI SDK providers (Ollama, OpenAI, OpenRouter, OpenAI-compatible) | providers decided; SDK is our call         |
+| Meeting bot                 | MeetingBaaS behind a `MeetingBotProvider` interface                                            | decided                                    |
+| Email                       | SMTP (Mailpit locally) or Resend in production, behind one interface                           | our call                                   |
+| Containers                  | Docker + Docker Compose                                                                        | decided                                    |
+| Reverse proxy and TLS       | Caddy                                                                                          | our call                                   |
+| Local webhook tunnel        | cloudflared (optional Compose profile)                                                         | our call                                   |
 
 **Why a SPA rather than TanStack Start:** bhidubot is a signed-in team tool, so SEO and first-paint server rendering
 don't matter. Elysia is already the server. A static build is simpler to host, either served by Caddy or by Elysia
@@ -288,12 +296,13 @@ Browser ──HTTPS──▶ Caddy ─┬─▶ web (static SPA)
   browsers. No Redis is needed.
 
 ### 6.4 Data model (sketch; the builder finalises it)
+
 - Better Auth tables: users, sessions, accounts, organizations, members, invitations.
 - `calendar_connections`: user → encrypted Google tokens and sync cursor.
 - `meetings`: `team_id`, `created_by`, `source` (calendar | adhoc), `calendar_event_id`, title, start and end,
   meeting URL, attendees, `bot_enabled`, `bot_status` (scheduled → dispatched → joined → recording → ended | failed
-  + reason), `provider_bot_id`, `recording_s3_key`, step statuses (`ingest`, `summarize`, `index`, `notify`, each
-  with state, attempts and `last_error`).
+  - reason), `provider_bot_id`, `recording_s3_key`, step statuses (`ingest`, `summarize`, `index`, `notify`, each
+    with state, attempts and `last_error`).
 - `transcript_segments`: meeting, speaker, `start_ms`, `end_ms`, text.
 - `meeting_chunks`: meeting, text, `start_ms`, `end_ms`, `embedding vector(N)`, `embedding_model`, a `tsvector`
   column.
@@ -309,6 +318,7 @@ deployment (env), and the UI only offers embedding models that match it. The def
 `dimensions` parameter).
 
 ### 6.5 AI provider abstraction (`packages/ai`)
+
 - Capabilities: `chat` (streaming + structured output), `embed`, `transcribe` (Phase 2).
 - Providers: Ollama, OpenAI, OpenRouter, generic OpenAI-compatible (covers LM Studio, vLLM, Groq and others).
   Configured per team in the database. Environment variables provide defaults for first boot.
@@ -317,6 +327,7 @@ deployment (env), and the UI only offers embedding models that match it. The def
 - Prompts live in one place, are versioned, and their outputs are tested against fixture transcripts.
 
 ### 6.6 Observability (decided: in Phase 1)
+
 - Structured JSON logs in the api and worker, with a request/job correlation ID.
 - **OpenTelemetry tracing** across api → SQS → worker. The trace context travels in SQS message attributes, so one
   meeting's pipeline appears as a single trace from webhook to email.
@@ -325,6 +336,7 @@ deployment (env), and the UI only offers embedding models that match it. The def
 - Key pipeline metrics: steps by status, step durations, retries, and DLQ depth.
 
 ### 6.7 Local AI on the user's machine (decided inputs: RTX 3060 laptop GPU, ~30-minute calls)
+
 - A laptop RTX 3060 typically has **6 GB of VRAM**, which fits **7–8B models at 4-bit quantisation**.
 - A 30-minute call is roughly 4–6k words, about 6–8k tokens, so a single-pass summary fits with
   `num_ctx` ≈ 8–16k. The map-reduce fallback from §4.3 covers longer calls.
@@ -340,6 +352,7 @@ deployment (env), and the UI only offers embedding models that match it. The def
   - Phase 2 transcription: `faster-whisper` small or medium on the GPU.
 
 ### 6.8 Environments
+
 - **Local:** `docker compose up` starts Postgres+pgvector, Floci, Mailpit and (optionally) cloudflared and a trace
   viewer. Ollama runs natively on the host (§6.7).
   `bun dev` runs web, api and worker with hot reload. A seed script creates a demo team and sample meetings from
@@ -363,6 +376,7 @@ deployment (env), and the UI only offers embedding models that match it. The def
   pipeline over a generic "media item" (meeting | recording), even though only meetings exist in Phase 1.
 
 ## 8. Phases 3–4 (placeholders)
+
 - **Integrations:** a Slack app (ask questions; post summaries to a channel), with Slack accounts linked
   explicitly from the web app, never by email matching. Jira, Asana and Trello export action items. One
   `Integration` interface, with tokens encrypted.
@@ -411,6 +425,7 @@ deployment (env), and the UI only offers embedding models that match it. The def
 - Any new significant decision during the build gets its ADR **in the same change**.
 
 ## 11. Quality bar
+
 - TypeScript strict mode. Builds and CI fail on type errors and lint errors.
 - `bun test` covers domain logic in `packages/*`: pipeline steps, the authorization helper, chunking, provider
   adapters with fakes, and webhook verification.
@@ -425,17 +440,18 @@ deployment (env), and the UI only offers embedding models that match it. The def
 **Accepted into Phase 1:**
 1. **Fake meeting-bot provider + webhook replay CLI.** Exercise the whole pipeline locally for free, without joining
    a real call (§11).
-2. **Speaker renaming** (§4.7). *Decided.*
-3. **Observability baseline** (§6.6). *Decided.*
+2. **Speaker renaming** (§4.7). _Decided._
+3. **Observability baseline** (§6.6). _Decided._
 
 Worth considering **later**:
 4. **An MCP server** exposing "search meetings" and "get meeting" tools, so Claude, Cursor and other agents can query
-   the team's meeting knowledge.
+the team's meeting knowledge.
 5. **Transcript translation** (the user's meeting-bot69 wish list), using the configured LLM.
 6. **Calendar push notifications** (Google `events.watch`) instead of polling, once polling becomes costly.
 7. **Weekly digest email:** decisions and open action items across the team's meetings.
 
 ## 13. Left to the builder
+
 - Exact library choices within the decided stack (component primitives, SSE helper, cron/interval utility),
   validated with `pick-ui-library` for UI.
 - The final schema details, chunk sizes, retrieval `k`, and the default embedding dimension/model.
@@ -443,6 +459,7 @@ Worth considering **later**:
 - Polling intervals (calendar sync, dispatch lead time), retry counts and backoff.
 
 ## 14. Open questions to verify during the build
+
 - MeetingBaaS: how webhooks are authenticated (signature or header), the event names for failures and status
   changes, whether recording URLs expire, and whether the `extra` field is echoed back.
 - Floci: confirm that its SQS (including DLQ redrive) and S3 (including presigned multipart uploads, needed in Phase

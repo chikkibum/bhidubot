@@ -25,13 +25,13 @@ before starting.
 
 ## Roadmap (Phase 1 is split into five plans; each ends in working software)
 
-| Plan | Delivers | Written |
-|---|---|---|
-| **1 — Foundation (this plan)** | Monorepo, infrastructure, config, db, auth + teams + invites, api/worker skeletons with traced queue, design system, app shell, ⌘K, E2E, ADRs | now |
-| 2 — Meeting pipeline | `packages/ai` (Ollama/OpenAI/OpenRouter), `MeetingBotProvider` + MeetingBaaS + fake adapter, authenticated webhook, "send bot now", ingest/summarize/index/notify steps, LISTEN/NOTIFY → SSE, basic meetings list | after Plan 1 lands |
-| 3 — Calendar & scheduling | `packages/crypto`, Google Calendar connect + sync, team assignment + de-dup, private/1:1 rules, dispatch scheduler with advisory-lock leader, `invalid_grant` → reconnect flow | after Plan 2 |
-| 4 — Meeting experience | Meeting page (player ↔ transcript), speaker renaming, action items + regenerate suggestions, meeting chat + Ask AI (hybrid retrieval, multi-turn), search/filters, team AI settings + test connection, bot persona | after Plan 3 |
-| 5 — Deployment | Dockerfiles, `docker-compose.prod.yml`, Caddy, backups, `docs/DEPLOYMENT.md` (incl. Google verification checklist) | after Plan 4 |
+| Plan                           | Delivers                                                                                                                                                                                                           | Written            |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| **1 — Foundation (this plan)** | Monorepo, infrastructure, config, db, auth + teams + invites, api/worker skeletons with traced queue, design system, app shell, ⌘K, E2E, ADRs                                                                      | now                |
+| 2 — Meeting pipeline           | `packages/ai` (Ollama/OpenAI/OpenRouter), `MeetingBotProvider` + MeetingBaaS + fake adapter, authenticated webhook, "send bot now", ingest/summarize/index/notify steps, LISTEN/NOTIFY → SSE, basic meetings list  | after Plan 1 lands |
+| 3 — Calendar & scheduling      | `packages/crypto`, Google Calendar connect + sync, team assignment + de-dup, private/1:1 rules, dispatch scheduler with advisory-lock leader, `invalid_grant` → reconnect flow                                     | after Plan 2       |
+| 4 — Meeting experience         | Meeting page (player ↔ transcript), speaker renaming, action items + regenerate suggestions, meeting chat + Ask AI (hybrid retrieval, multi-turn), search/filters, team AI settings + test connection, bot persona | after Plan 3       |
+| 5 — Deployment                 | Dockerfiles, `docker-compose.prod.yml`, Caddy, backups, `docs/DEPLOYMENT.md` (incl. Google verification checklist)                                                                                                 | after Plan 4       |
 
 ## Global Constraints
 
@@ -229,16 +229,21 @@ import { EnvError, loadEnv } from './load-env'
 import { apiEnvSchema, authEnv } from './schemas'
 
 const valid = {
-  APP_URL: 'http://localhost:5173', DATABASE_URL: 'postgres://u:p@localhost:5432/bhidubot',
-  AWS_ACCESS_KEY_ID: 'test', AWS_SECRET_ACCESS_KEY: 'test',
-  BETTER_AUTH_SECRET: 'x'.repeat(32), BETTER_AUTH_URL: 'http://localhost:5173',
+  APP_URL: 'http://localhost:5173',
+  DATABASE_URL: 'postgres://u:p@localhost:5432/bhidubot',
+  AWS_ACCESS_KEY_ID: 'test',
+  AWS_SECRET_ACCESS_KEY: 'test',
+  BETTER_AUTH_SECRET: 'x'.repeat(32),
+  BETTER_AUTH_URL: 'http://localhost:5173',
 }
 
 describe('loadEnv', () => {
   test('reports every missing variable at once', () => {
     const { DATABASE_URL, BETTER_AUTH_SECRET, ...rest } = valid
-    try { loadEnv(apiEnvSchema, rest); throw new Error('should have thrown') }
-    catch (e) {
+    try {
+      loadEnv(apiEnvSchema, rest)
+      throw new Error('should have thrown')
+    } catch (e) {
       expect(e).toBeInstanceOf(EnvError)
       expect((e as EnvError).missing.sort()).toEqual(['BETTER_AUTH_SECRET', 'DATABASE_URL'])
       expect((e as EnvError).message).toContain('DATABASE_URL')
@@ -256,8 +261,12 @@ describe('loadEnv', () => {
     expect(env.ALLOWED_SIGNUP_DOMAINS).toEqual(['acme.com', 'x.io'])
   })
   test('rejects a short auth secret as invalid, not missing', () => {
-    try { loadEnv(authEnv, { ...valid, BETTER_AUTH_SECRET: 'short' }); throw new Error('no') }
-    catch (e) { expect((e as EnvError).invalid).toEqual(['BETTER_AUTH_SECRET']) }
+    try {
+      loadEnv(authEnv, { ...valid, BETTER_AUTH_SECRET: 'short' })
+      throw new Error('no')
+    } catch (e) {
+      expect((e as EnvError).invalid).toEqual(['BETTER_AUTH_SECRET'])
+    }
   })
 })
 ```
@@ -366,15 +375,15 @@ git commit -m "chore(infra): docker compose with pgvector, floci, mailpit and op
     `RESTART IDENTITY CASCADE`
   - `jobRuns` table:
 
-    | column | type |
-    |---|---|
-    | `id` | text pk (= job ID) |
-    | `type` | text, not null |
-    | `status` | pg enum `job_status`: `running`, `succeeded`, `failed` |
-    | `attempt` | int, not null |
-    | `trace_id` | text, null |
-    | `last_error` | text, null |
-    | `created_at`, `updated_at` | timestamptz, default now() |
+    | column                     | type                                                   |
+    | -------------------------- | ------------------------------------------------------ |
+    | `id`                       | text pk (= job ID)                                     |
+    | `type`                     | text, not null                                         |
+    | `status`                   | pg enum `job_status`: `running`, `succeeded`, `failed` |
+    | `attempt`                  | int, not null                                          |
+    | `trace_id`                 | text, null                                             |
+    | `last_error`               | text, null                                             |
+    | `created_at`, `updated_at` | timestamptz, default now()                             |
 - Package scripts:
   - `db:generate` (`drizzle-kit generate`)
   - `db:migrate` (`bun src/migrate.ts`, uses `DATABASE_URL`)
@@ -398,7 +407,9 @@ test('pgvector extension is installed by migrations', async () => {
 })
 
 test('job_runs round-trips a row', async () => {
-  await db.insert(jobRuns).values({ id: 'job-1', type: 'system.ping', status: 'running', attempt: 1 })
+  await db
+    .insert(jobRuns)
+    .values({ id: 'job-1', type: 'system.ping', status: 'running', attempt: 1 })
   const [row] = await db.select().from(jobRuns)
   expect(row?.status).toBe('running')
   expect(row?.traceId).toBeNull()
@@ -452,7 +463,11 @@ import { expect, test } from 'bun:test'
 import { renderInvitationEmail } from './invitation'
 
 test('invitation contains accept link and team, and escapes HTML', () => {
-  const m = renderInvitationEmail({ inviterName: 'Bhaskar', teamName: '<script>x</script>', acceptUrl: 'http://localhost:5173/accept-invite/abc' })
+  const m = renderInvitationEmail({
+    inviterName: 'Bhaskar',
+    teamName: '<script>x</script>',
+    acceptUrl: 'http://localhost:5173/accept-invite/abc',
+  })
   expect(m.subject).toBe('Bhaskar invited you to <script>x</script> on bhidubot')
   expect(m.html).toContain('href="http://localhost:5173/accept-invite/abc"')
   expect(m.html).toContain('&lt;script&gt;x&lt;/script&gt;')
@@ -468,9 +483,13 @@ import { createSmtpMailer } from './mailer'
 
 test('smtp mailer delivers to mailpit', async () => {
   const to = `mailer-${Date.now()}@test.dev`
-  await createSmtpMailer({ smtpUrl: 'smtp://localhost:1025', from: 'bhidubot <no-reply@bhidubot.local>' })
-    .send({ to, subject: 'hello', html: '<p>hi</p>', text: 'hi' })
-  const res = await fetch(`http://localhost:8025/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`)
+  await createSmtpMailer({
+    smtpUrl: 'smtp://localhost:1025',
+    from: 'bhidubot <no-reply@bhidubot.local>',
+  }).send({ to, subject: 'hello', html: '<p>hi</p>', text: 'hi' })
+  const res = await fetch(
+    `http://localhost:8025/api/v1/search?query=${encodeURIComponent(`to:"${to}"`)}`,
+  )
   const body = (await res.json()) as { messages: Array<{ Subject: string }> }
   expect(body.messages[0]?.Subject).toBe('hello')
 })
@@ -545,18 +564,33 @@ import { getMembership } from './authorize'
 
 const { db } = createDb(process.env.DATABASE_URL_TEST!)
 const mailer = createMemoryMailer()
-const env = { APP_URL: 'http://localhost:5173', BETTER_AUTH_SECRET: 's'.repeat(32), BETTER_AUTH_URL: 'http://localhost:5173', ALLOWED_SIGNUP_DOMAINS: ['partner.dev'] }
+const env = {
+  APP_URL: 'http://localhost:5173',
+  BETTER_AUTH_SECRET: 's'.repeat(32),
+  BETTER_AUTH_URL: 'http://localhost:5173',
+  ALLOWED_SIGNUP_DOMAINS: ['partner.dev'],
+}
 const auth = createAuth({ db, mailer, env })
-const signUp = (email: string) => auth.api.signUpEmail({ body: { email, password: 'correct-horse-9', name: email.split('@')[0]! }, asResponse: false })
+const signUp = (email: string) =>
+  auth.api.signUpEmail({
+    body: { email, password: 'correct-horse-9', name: email.split('@')[0]! },
+    asResponse: false,
+  })
 
 async function adminWithTeam() {
-  const res = await auth.api.signUpEmail({ body: { email: 'boss@acme.dev', password: 'correct-horse-9', name: 'Boss' }, returnHeaders: true })
+  const res = await auth.api.signUpEmail({
+    body: { email: 'boss@acme.dev', password: 'correct-horse-9', name: 'Boss' },
+    returnHeaders: true,
+  })
   const headers = new Headers({ cookie: res.headers.get('set-cookie')! })
   const team = await auth.api.createOrganization({ body: { name: 'Acme', slug: 'acme' }, headers })
   return { headers, teamId: team!.id }
 }
 
-beforeEach(async () => { await resetTestDb(db); mailer.sent.length = 0 })
+beforeEach(async () => {
+  await resetTestDb(db)
+  mailer.sent.length = 0
+})
 
 describe('invite-only sign-up', () => {
   test('first sign-up becomes instance admin', async () => {
@@ -565,18 +599,26 @@ describe('invite-only sign-up', () => {
   })
   test('uninvited sign-up is rejected with the invite-only message', async () => {
     await signUp('boss@acme.dev')
-    await expect(signUp('stranger@else.dev')).rejects.toThrow('Sign-up is invite-only. Ask your team admin for an invite.')
+    await expect(signUp('stranger@else.dev')).rejects.toThrow(
+      'Sign-up is invite-only. Ask your team admin for an invite.',
+    )
   })
   test('invite matches email case-insensitively and sends the accept link', async () => {
     const { headers, teamId } = await adminWithTeam()
-    const inv = await auth.api.createInvitation({ body: { email: ' Ana@Team.DEV ', role: 'member', organizationId: teamId }, headers })
+    const inv = await auth.api.createInvitation({
+      body: { email: ' Ana@Team.DEV ', role: 'member', organizationId: teamId },
+      headers,
+    })
     expect(mailer.sent[0]?.html).toContain(`http://localhost:5173/accept-invite/${inv.id}`)
     const { user } = await signUp('ana@team.dev')
     expect(user.isInstanceAdmin).toBe(false)
   })
   test('expired or cancelled invitation does not allow sign-up', async () => {
     const { headers, teamId } = await adminWithTeam()
-    const inv = await auth.api.createInvitation({ body: { email: 'late@team.dev', role: 'member', organizationId: teamId }, headers })
+    const inv = await auth.api.createInvitation({
+      body: { email: 'late@team.dev', role: 'member', organizationId: teamId },
+      headers,
+    })
     await auth.api.cancelInvitation({ body: { invitationId: inv.id }, headers })
     await expect(signUp('late@team.dev')).rejects.toThrow('invite-only')
   })
@@ -587,8 +629,10 @@ describe('invite-only sign-up', () => {
   })
   test('concurrent first sign-ups yield exactly one admin', async () => {
     const results = await Promise.allSettled([signUp('a@x.dev'), signUp('b@x.dev')])
-    expect(results.filter(r => r.status === 'fulfilled')).toHaveLength(1)
-    const admins = await db.execute(sql`select count(*)::int as n from "user" where is_instance_admin`)
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1)
+    const admins = await db.execute(
+      sql`select count(*)::int as n from "user" where is_instance_admin`,
+    )
     expect((admins[0] as { n: number }).n).toBe(1)
   })
 })
@@ -658,21 +702,32 @@ git commit -m "feat(auth): better auth with teams, invite-only signup and first-
 
 ```ts
 import { expect, test } from 'bun:test'
-import { currentTraceId, initTracing, injectTraceContext, tracer, withExtractedContext } from './index'
+import {
+  currentTraceId,
+  initTracing,
+  injectTraceContext,
+  tracer,
+  withExtractedContext,
+} from './index'
 
 initTracing({ serviceName: 'test' })
 
 test('injected traceparent is restored by withExtractedContext', async () => {
   let carrier: Record<string, string> = {}
   let traceId = ''
-  await tracer('t').startActiveSpan('producer', async span => {
+  await tracer('t').startActiveSpan('producer', async (span) => {
     carrier = injectTraceContext()
     traceId = span.spanContext().traceId
     span.end()
   })
   expect(carrier.traceparent).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]$/)
   const seen = await withExtractedContext(carrier, async () =>
-    tracer('t').startActiveSpan('consumer', async span => { const id = currentTraceId(); span.end(); return id }))
+    tracer('t').startActiveSpan('consumer', async (span) => {
+      const id = currentTraceId()
+      span.end()
+      return id
+    }),
+  )
   expect(seen).toBe(traceId)
 })
 ```
@@ -743,27 +798,58 @@ import { createQueue, createSqsClient, ensureQueues, startConsumer } from './ind
 import { createLogger, initTracing, tracer } from '@bhidubot/observability'
 
 initTracing({ serviceName: 'queue-test' })
-const env = { AWS_ENDPOINT_URL: 'http://localhost:4566', AWS_REGION: 'us-east-1', AWS_ACCESS_KEY_ID: 'test', AWS_SECRET_ACCESS_KEY: 'test' }
+const env = {
+  AWS_ENDPOINT_URL: 'http://localhost:4566',
+  AWS_REGION: 'us-east-1',
+  AWS_ACCESS_KEY_ID: 'test',
+  AWS_SECRET_ACCESS_KEY: 'test',
+}
 const sqs = createSqsClient(env as never)
 const logger = createLogger('queue-test', 'silent')
 const names = (s: string) => ({ queue: `t-${s}-${Date.now()}`, dlq: `t-${s}-dlq-${Date.now()}` })
 
 test('enqueued job is consumed with the producer trace id', async () => {
   const { queueUrl } = await ensureQueues(sqs, names('ok'))
-  const { traceId } = await tracer('t').startActiveSpan('api', async s => { const r = await createQueue(sqs, queueUrl).enqueue('system.ping', { note: 'hi' }); s.end(); return r })
+  const { traceId } = await tracer('t').startActiveSpan('api', async (s) => {
+    const r = await createQueue(sqs, queueUrl).enqueue('system.ping', { note: 'hi' })
+    s.end()
+    return r
+  })
   const ac = new AbortController()
   let seen: { type: string; payload: unknown; traceId?: string } | undefined
-  await startConsumer({ sqs, queueUrl, logger, signal: ac.signal, waitTimeSeconds: 1,
-    handle: async (type, payload, ctx) => { seen = { type, payload, traceId: ctx.traceId }; ac.abort() } })
+  await startConsumer({
+    sqs,
+    queueUrl,
+    logger,
+    signal: ac.signal,
+    waitTimeSeconds: 1,
+    handle: async (type, payload, ctx) => {
+      seen = { type, payload, traceId: ctx.traceId }
+      ac.abort()
+    },
+  })
   expect(seen).toEqual({ type: 'system.ping', payload: { note: 'hi' }, traceId })
 })
 
 test('a job that always fails lands in the DLQ after maxReceiveCount', async () => {
-  const { queueUrl, dlqUrl } = await ensureQueues(sqs, { ...names('dlq'), maxReceiveCount: 2, visibilityTimeoutSeconds: 1 })
+  const { queueUrl, dlqUrl } = await ensureQueues(sqs, {
+    ...names('dlq'),
+    maxReceiveCount: 2,
+    visibilityTimeoutSeconds: 1,
+  })
   await createQueue(sqs, queueUrl).enqueue('system.ping', { note: 'boom' })
   const ac = new AbortController()
   setTimeout(() => ac.abort(), 8000)
-  await startConsumer({ sqs, queueUrl, logger, signal: ac.signal, waitTimeSeconds: 1, handle: async () => { throw new Error('boom') } })
+  await startConsumer({
+    sqs,
+    queueUrl,
+    logger,
+    signal: ac.signal,
+    waitTimeSeconds: 1,
+    handle: async () => {
+      throw new Error('boom')
+    },
+  })
   const { ReceiveMessageCommand } = await import('@aws-sdk/client-sqs')
   const dlq = await sqs.send(new ReceiveMessageCommand({ QueueUrl: dlqUrl, WaitTimeSeconds: 2 }))
   expect(dlq.Messages?.length).toBe(1)
@@ -845,7 +931,8 @@ import { makeTestApp } from './test-helpers' // create in this task: returns { a
 
 const t = await makeTestApp()
 beforeEach(() => t.resetAll())
-const get = (path: string, cookie?: string) => t.app.handle(new Request(`http://localhost${path}`, { headers: cookie ? { cookie } : {} }))
+const get = (path: string, cookie?: string) =>
+  t.app.handle(new Request(`http://localhost${path}`, { headers: cookie ? { cookie } : {} }))
 
 describe('api', () => {
   test('health reports db and queue up', async () => {
@@ -859,7 +946,11 @@ describe('api', () => {
   test('/api/me returns the signed-in instance admin', async () => {
     const cookie = await t.signUpAndCookie('boss@acme.dev')
     const body = await (await get('/api/me', cookie)).json()
-    expect(body).toMatchObject({ email: 'boss@acme.dev', isInstanceAdmin: true, activeTeamId: null })
+    expect(body).toMatchObject({
+      email: 'boss@acme.dev',
+      isInstanceAdmin: true,
+      activeTeamId: null,
+    })
   })
   test('team route needs an active team', async () => {
     const cookie = await t.signUpAndCookie('boss@acme.dev')
@@ -868,16 +959,25 @@ describe('api', () => {
     expect(await res.json()).toEqual({ error: 'no_active_team' })
   })
   test('removed member gets 404 on team route', async () => {
-    const { ownerCookie, memberCookie, teamId, memberId } = await t.teamWithMember()  // helper: owner creates team, invites+accepts member, both set active
+    const { ownerCookie, memberCookie, teamId, memberId } = await t.teamWithMember() // helper: owner creates team, invites+accepts member, both set active
     expect((await get('/api/teams/current', memberCookie)).status).toBe(200)
-    await t.auth.api.removeMember({ body: { memberIdOrEmail: memberId, organizationId: teamId }, headers: new Headers({ cookie: ownerCookie }) })
+    await t.auth.api.removeMember({
+      body: { memberIdOrEmail: memberId, organizationId: teamId },
+      headers: new Headers({ cookie: ownerCookie }),
+    })
     const res = await get('/api/teams/current', memberCookie)
     expect(res.status).toBe(404)
     expect(await res.json()).toEqual({ error: 'team_not_found' })
   })
   test('dev ping enqueues a job carrying the trace id', async () => {
     const cookie = await t.signUpAndCookie('boss@acme.dev')
-    const res = await t.app.handle(new Request('http://localhost/api/dev/ping', { method: 'POST', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ note: 'hi' }) }))
+    const res = await t.app.handle(
+      new Request('http://localhost/api/dev/ping', {
+        method: 'POST',
+        headers: { cookie, 'content-type': 'application/json' },
+        body: JSON.stringify({ note: 'hi' }),
+      }),
+    )
     expect(res.status).toBe(202)
     const { jobId } = await res.json()
     expect(typeof jobId).toBe('string')
@@ -952,16 +1052,33 @@ git commit -m "feat(api): elysia app with auth/team macros, health, me and dev p
 test('records success with attempt and trace id', async () => {
   await runJob(deps, 'system.ping', { note: 'x' }, { jobId: 'j1', attempt: 1, traceId: 'abc' })
   const [row] = await db.select().from(jobRuns)
-  expect(row).toMatchObject({ id: 'j1', status: 'succeeded', attempt: 1, traceId: 'abc', lastError: null })
+  expect(row).toMatchObject({
+    id: 'j1',
+    status: 'succeeded',
+    attempt: 1,
+    traceId: 'abc',
+    lastError: null,
+  })
 })
 test('records failure and rethrows so SQS retries', async () => {
-  const failing = { ...deps, handlers: { 'system.ping': async () => { throw new Error('nope') } } }
-  await expect(runJob(failing, 'system.ping', { note: 'x' }, { jobId: 'j2', attempt: 3, traceId: undefined })).rejects.toThrow('nope')
+  const failing = {
+    ...deps,
+    handlers: {
+      'system.ping': async () => {
+        throw new Error('nope')
+      },
+    },
+  }
+  await expect(
+    runJob(failing, 'system.ping', { note: 'x' }, { jobId: 'j2', attempt: 3, traceId: undefined }),
+  ).rejects.toThrow('nope')
   const [row] = await db.select().from(jobRuns)
   expect(row).toMatchObject({ id: 'j2', status: 'failed', attempt: 3, lastError: 'nope' })
 })
 test('unknown job type fails loudly', async () => {
-  await expect(runJob(deps, 'nope.job', {}, { jobId: 'j3', attempt: 1, traceId: undefined })).rejects.toThrow('unknown_job_type: nope.job')
+  await expect(
+    runJob(deps, 'nope.job', {}, { jobId: 'j3', attempt: 1, traceId: undefined }),
+  ).rejects.toThrow('unknown_job_type: nope.job')
 })
 ```
 
@@ -969,8 +1086,14 @@ test('unknown job type fails loudly', async () => {
 // dependencies.test.ts
 test('assertDependencies names the unreachable dependency', async () => {
   const started = Date.now()
-  await expect(assertDependencies({ databaseUrl: 'postgres://x:y@localhost:5999/none', sqs, queueUrl, timeoutMs: 2000 }))
-    .rejects.toThrow('Cannot reach postgres')
+  await expect(
+    assertDependencies({
+      databaseUrl: 'postgres://x:y@localhost:5999/none',
+      sqs,
+      queueUrl,
+      timeoutMs: 2000,
+    }),
+  ).rejects.toThrow('Cannot reach postgres')
   expect(Date.now() - started).toBeLessThan(5000)
 })
 ```
@@ -1066,14 +1189,20 @@ for (const theme of ['dark', 'light'] as const) {
 }
 test('dark tokens are verbatim from DESIGN.md', () => {
   const t = readTokens('dark')
-  expect(t['--canvas']).toBe('#010102'); expect(t['--primary']).toBe('#5e6ad2'); expect(t['--hairline']).toBe('#23252a')
+  expect(t['--canvas']).toBe('#010102')
+  expect(t['--primary']).toBe('#5e6ad2')
+  expect(t['--hairline']).toBe('#23252a')
 })
 ```
 
 ```tsx
 // button.test.tsx
 test('renders variant, disables accessibly, shows focus ring class', () => {
-  const { getByRole } = render(<Button variant="primary" disabled>Send bot</Button>)
+  const { getByRole } = render(
+    <Button variant="primary" disabled>
+      Send bot
+    </Button>,
+  )
   const b = getByRole('button', { name: 'Send bot' })
   expect(b.dataset.variant).toBe('primary')
   expect(b).toBeDisabled()
@@ -1233,24 +1362,37 @@ git commit -m "feat(web): tanstack spa shell with auth, teams, invites, command 
 
 ```ts
 // onboarding.spec.ts
-test('first user becomes admin, creates a team, invites and the invitee joins', async ({ browser, page, request }) => {
+test('first user becomes admin, creates a team, invites and the invitee joins', async ({
+  browser,
+  page,
+  request,
+}) => {
   await page.goto('/sign-up')
-  await page.getByLabel('Name').fill('Boss'); await page.getByLabel('Email').fill('boss@acme.dev'); await page.getByLabel('Password').fill('correct-horse-9')
+  await page.getByLabel('Name').fill('Boss')
+  await page.getByLabel('Email').fill('boss@acme.dev')
+  await page.getByLabel('Password').fill('correct-horse-9')
   await page.getByRole('button', { name: 'Create account' }).click()
   await page.getByRole('button', { name: 'Create your team' }).click()
-  await page.getByLabel('Team name').fill('Acme'); await page.getByRole('button', { name: 'Create team' }).click()
+  await page.getByLabel('Team name').fill('Acme')
+  await page.getByRole('button', { name: 'Create team' }).click()
   await page.goto('/settings/team')
-  await page.getByLabel('Email').fill('ana@test.dev'); await page.getByRole('button', { name: 'Send invite' }).click()
+  await page.getByLabel('Email').fill('ana@test.dev')
+  await page.getByRole('button', { name: 'Send invite' }).click()
   await expect(page.getByText('ana@test.dev')).toBeVisible()
 
-  const mail = await (await request.get('http://localhost:8025/api/v1/search?query=to:"ana@test.dev"')).json()
-  const msg = await (await request.get(`http://localhost:8025/api/v1/message/${mail.messages[0].ID}`)).json()
+  const mail = await (
+    await request.get('http://localhost:8025/api/v1/search?query=to:"ana@test.dev"')
+  ).json()
+  const msg = await (
+    await request.get(`http://localhost:8025/api/v1/message/${mail.messages[0].ID}`)
+  ).json()
   const link = /http:\/\/localhost:5173\/accept-invite\/[\w-]+/.exec(msg.Text)![0]
 
   const ana = await (await browser.newContext()).newPage()
   await ana.goto(link)
   await ana.getByRole('link', { name: 'Create an account' }).click()
-  await ana.getByLabel('Name').fill('Ana'); await ana.getByLabel('Password').fill('correct-horse-9')
+  await ana.getByLabel('Name').fill('Ana')
+  await ana.getByLabel('Password').fill('correct-horse-9')
   await ana.getByRole('button', { name: 'Create account' }).click()
   await expect(ana.getByRole('button', { name: /Acme/ })).toBeVisible() // team switcher shows Acme
   await page.reload()
@@ -1259,22 +1401,29 @@ test('first user becomes admin, creates a team, invites and the invitee joins', 
 
 test('uninvited sign-up sees the invite-only message', async ({ page }) => {
   await page.goto('/sign-up')
-  await page.getByLabel('Name').fill('Stranger'); await page.getByLabel('Email').fill('stranger@else.dev'); await page.getByLabel('Password').fill('correct-horse-9')
+  await page.getByLabel('Name').fill('Stranger')
+  await page.getByLabel('Email').fill('stranger@else.dev')
+  await page.getByLabel('Password').fill('correct-horse-9')
   await page.getByRole('button', { name: 'Create account' }).click()
-  await expect(page.getByText('Sign-up is invite-only. Ask your team admin for an invite.')).toBeVisible()
+  await expect(
+    page.getByText('Sign-up is invite-only. Ask your team admin for an invite.'),
+  ).toBeVisible()
 })
 ```
 
 ```ts
 // shell.spec.ts (signs in as boss via a storageState fixture created in global-setup)
 test('theme choice survives reload without flashing', async ({ page }) => {
-  await page.goto('/settings/profile'); await page.getByRole('radio', { name: 'Light' }).click()
+  await page.goto('/settings/profile')
+  await page.getByRole('radio', { name: 'Light' }).click()
   await page.reload({ waitUntil: 'commit' })
   expect(await page.evaluate(() => document.documentElement.dataset.theme)).toBe('light')
 })
 test('Ctrl+K palette navigates to team settings by keyboard', async ({ page }) => {
-  await page.goto('/'); await page.keyboard.press('Control+K')
-  await page.keyboard.type('team settings'); await page.keyboard.press('Enter')
+  await page.goto('/')
+  await page.keyboard.press('Control+K')
+  await page.keyboard.type('team settings')
+  await page.keyboard.press('Enter')
   await expect(page).toHaveURL(/\/settings\/team$/)
 })
 test('signed-out visit to app redirects to sign-in with return path', async ({ browser }) => {
