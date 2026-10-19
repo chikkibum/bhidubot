@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "test": "turbo run test",
+    "test": "turbo run test --concurrency=1",
     "typecheck": "turbo run typecheck",
     "lint": "biome check .",
     "format": "biome format --write ."
