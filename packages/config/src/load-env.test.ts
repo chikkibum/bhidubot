@@ -42,4 +42,23 @@ describe('loadEnv', () => {
       expect((e as EnvError).invalid).toEqual(['BETTER_AUTH_SECRET'])
     }
   })
+
+  test('treats empty strings as unset', () => {
+    const env = loadEnv(apiEnvSchema, { ...valid, AWS_ENDPOINT_URL: '' })
+    expect(env.AWS_ENDPOINT_URL).toBeUndefined()
+  })
+  test('reports an empty required variable as missing, not invalid', () => {
+    try {
+      loadEnv(apiEnvSchema, { ...valid, DATABASE_URL: '' })
+      throw new Error('no')
+    } catch (e) {
+      expect(e).toBeInstanceOf(EnvError)
+      expect((e as EnvError).missing).toEqual(['DATABASE_URL'])
+      expect((e as EnvError).invalid).toEqual([])
+    }
+  })
+  test('empty ALLOWED_SIGNUP_DOMAINS yields an empty list', () => {
+    const env = loadEnv(authEnv, { ...valid, ALLOWED_SIGNUP_DOMAINS: '' })
+    expect(env.ALLOWED_SIGNUP_DOMAINS).toEqual([])
+  })
 })
