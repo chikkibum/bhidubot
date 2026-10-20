@@ -33,7 +33,7 @@ export async function evaluateSignup(
     .from(invitation)
     .where(
       and(
-        sql`lower(${invitation.email}) = ${normalised}`,
+        sql`lower(trim(${invitation.email})) = ${normalised}`,
         eq(invitation.status, 'pending'),
         // Better Auth stores UTC wall-clock in `timestamp` (no tz) columns; compare on the same basis.
         gt(invitation.expiresAt, sql`(now() at time zone 'utc')`),

@@ -1,16 +1,18 @@
 import { fileURLToPath } from 'node:url'
+import { drizzle } from 'drizzle-orm/postgres-js'
 import { migrate } from 'drizzle-orm/postgres-js/migrator'
-import { createDb } from './client'
+import postgres from 'postgres'
 
 const migrationsFolder = fileURLToPath(new URL('../drizzle', import.meta.url))
 
 export async function runMigrations(url: string): Promise<void> {
-  // Migrations run on a dedicated single connection, closed afterwards.
-  const { db, close } = createDb(url)
+  // Migrations run on a dedicated single connection, closed afterwards. Postgres NOTICEs
+  // ("schema drizzle already exists, skipping") are expected on re-runs and silenced.
+  const client = postgres(url, { max: 1, onnotice: () => {} })
   try {
-    await migrate(db, { migrationsFolder })
+    await migrate(drizzle(client), { migrationsFolder })
   } finally {
-    await close()
+    await client.end()
   }
 }
 
