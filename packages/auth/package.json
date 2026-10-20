@@ -1,0 +1,22 @@
+{
+  "name": "@bhidubot/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "auth:generate": "bunx auth@1.7.14 generate --config src/auth.schema-config.ts --adapter drizzle --dialect postgresql --output ../db/src/schema/auth.ts --yes && biome check --write ../db/src/schema/auth.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@bhidubot/db": "workspace:*",
+    "@bhidubot/email": "workspace:*",
+    "@bhidubot/shared": "workspace:*",
+    "@better-auth/drizzle-adapter": "^1.7.14",
+    "better-auth": "^1.7.14",
+    "drizzle-orm": "^0.45.4"
+  }
+}
