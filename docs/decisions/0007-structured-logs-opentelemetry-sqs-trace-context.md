@@ -40,3 +40,5 @@ One trace must follow a job across the API and worker processes.
 
 - Tasks 8-10 call `injectTraceContext`, `withExtractedContext`, `createLogger` and `initTracing`.
 - Uses the OpenTelemetry JS 3.x line (`@opentelemetry/sdk-trace`, exporter 0.300).
+- Log lines carry `trace_id` while a span is active (a pino `mixin` in `createLogger`, added in Task 9), so logs
+  and traces join on one id.
