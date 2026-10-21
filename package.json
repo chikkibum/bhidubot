@@ -3,7 +3,8 @@
   "private": true,
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "scripts"
   ],
   "scripts": {
     "dev": "turbo run dev",
@@ -11,7 +12,8 @@
     "test": "turbo run test --concurrency=1",
     "typecheck": "turbo run typecheck",
     "lint": "biome check .",
-    "format": "biome format --write ."
+    "format": "biome format --write .",
+    "infra:bootstrap": "bun run scripts/bootstrap-infra.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.4",

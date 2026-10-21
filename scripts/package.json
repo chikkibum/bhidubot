@@ -1,0 +1,11 @@
+{
+  "name": "@bhidubot/scripts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@bhidubot/config": "workspace:*",
+    "@bhidubot/queue": "workspace:*",
+    "@bhidubot/storage": "workspace:*"
+  }
+}

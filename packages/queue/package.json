@@ -1,0 +1,18 @@
+{
+  "name": "@bhidubot/queue",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.1160.0",
+    "@bhidubot/config": "workspace:*",
+    "@bhidubot/observability": "workspace:*"
+  }
+}
