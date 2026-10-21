@@ -29,6 +29,22 @@
         "elysia": "^1.4.30",
       },
     },
+    "apps/worker": {
+      "name": "@bhidubot/worker",
+      "version": "0.0.0",
+      "dependencies": {
+        "@aws-sdk/client-sqs": "^3.1160.0",
+        "@bhidubot/config": "workspace:*",
+        "@bhidubot/db": "workspace:*",
+        "@bhidubot/observability": "workspace:*",
+        "@bhidubot/queue": "workspace:*",
+        "@opentelemetry/api": "^1.10.0",
+        "drizzle-orm": "^0.45.4",
+      },
+      "devDependencies": {
+        "@bhidubot/api": "workspace:*",
+      },
+    },
     "packages/auth": {
       "name": "@bhidubot/auth",
       "version": "0.0.0",
@@ -89,7 +105,9 @@
       "dependencies": {
         "@aws-sdk/client-sqs": "^3.1160.0",
         "@bhidubot/config": "workspace:*",
+        "@bhidubot/db": "workspace:*",
         "@bhidubot/observability": "workspace:*",
+        "drizzle-orm": "^0.45.4",
       },
     },
     "packages/shared": {
@@ -192,6 +210,8 @@
     "@bhidubot/shared": ["@bhidubot/shared@workspace:packages/shared"],
 
     "@bhidubot/storage": ["@bhidubot/storage@workspace:packages/storage"],
+
+    "@bhidubot/worker": ["@bhidubot/worker@workspace:apps/worker"],
 
     "@biomejs/biome": ["@biomejs/biome@2.6.4", "", { "optionalDependencies": { "@biomejs/cli-android-arm64": "2.6.4", "@biomejs/cli-android-x64": "2.6.4", "@biomejs/cli-darwin-arm64": "2.6.4", "@biomejs/cli-darwin-x64": "2.6.4", "@biomejs/cli-linux-arm64": "2.6.4", "@biomejs/cli-linux-arm64-musl": "2.6.4", "@biomejs/cli-linux-x64": "2.6.4", "@biomejs/cli-linux-x64-musl": "2.6.4", "@biomejs/cli-win32-arm64": "2.6.4", "@biomejs/cli-win32-x64": "2.6.4" }, "bin": { "biome": "bin/biome" } }, "sha512-8sKKwaNW4ot22awZ3lBjwWLHnUFXgXnrBPYS2gNlBAXRbDC++7kqjK2H7dR/FgCDtPvO1xfKpgEhJkGxAKYkxA=="],
 

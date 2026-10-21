@@ -1,5 +1,6 @@
 export { createSqsClient } from './client'
 export { startConsumer } from './consume'
+export { assertDependencies, DependencyError, getQueueUrl } from './dependencies'
 export { createQueue } from './enqueue'
 export { ensureQueues } from './ensure-queues'
 export type { JobContext, JobHandler, JobMap, JobType } from './jobs'

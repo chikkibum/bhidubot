@@ -13,6 +13,8 @@
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.1160.0",
     "@bhidubot/config": "workspace:*",
-    "@bhidubot/observability": "workspace:*"
+    "@bhidubot/db": "workspace:*",
+    "@bhidubot/observability": "workspace:*",
+    "drizzle-orm": "^0.45.4"
   }
 }

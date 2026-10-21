@@ -1,0 +1,27 @@
+{
+  "name": "@bhidubot/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/run-job.ts"
+  },
+  "scripts": {
+    "dev": "bun --env-file=../../.env --watch src/main.ts",
+    "start": "bun src/main.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-sqs": "^3.1160.0",
+    "@bhidubot/config": "workspace:*",
+    "@bhidubot/db": "workspace:*",
+    "@bhidubot/observability": "workspace:*",
+    "@bhidubot/queue": "workspace:*",
+    "@opentelemetry/api": "^1.10.0",
+    "drizzle-orm": "^0.45.4"
+  },
+  "devDependencies": {
+    "@bhidubot/api": "workspace:*"
+  }
+}

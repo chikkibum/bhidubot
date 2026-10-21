@@ -1,11 +1,15 @@
-import { GetQueueUrlCommand } from '@aws-sdk/client-sqs'
 import { createAuth } from '@bhidubot/auth'
 import { apiEnvSchema, loadEnv } from '@bhidubot/config'
 import { createDb } from '@bhidubot/db'
 import { createSmtpMailer } from '@bhidubot/email'
 import { createLogger, initTracing } from '@bhidubot/observability'
-import { createQueue, createSqsClient } from '@bhidubot/queue'
-import { sql } from 'drizzle-orm'
+import {
+  assertDependencies,
+  createQueue,
+  createSqsClient,
+  DependencyError,
+  getQueueUrl,
+} from '@bhidubot/queue'
 import { createApp } from './app'
 
 const env = loadEnv(apiEnvSchema)
@@ -15,20 +19,14 @@ const logger = createLogger('api', env.LOG_LEVEL)
 const { db, close: closeDb } = createDb(env.DATABASE_URL)
 const sqs = createSqsClient(env)
 
-// Fail fast, naming the dependency. Task 10 replaces this with `assertDependencies`.
+// Fail fast, naming the dependency.
 let queueUrl: string
 try {
-  await db.execute(sql`select 1`)
+  queueUrl = await getQueueUrl(sqs, env.SQS_JOBS_QUEUE)
+  await assertDependencies({ databaseUrl: env.DATABASE_URL, sqs, queueUrl })
 } catch (error) {
-  logger.fatal({ err: error }, 'Cannot reach postgres')
-  process.exit(1)
-}
-try {
-  const res = await sqs.send(new GetQueueUrlCommand({ QueueName: env.SQS_JOBS_QUEUE }))
-  if (!res.QueueUrl) throw new Error(`no URL for queue ${env.SQS_JOBS_QUEUE}`)
-  queueUrl = res.QueueUrl
-} catch (error) {
-  logger.fatal({ err: error }, 'Cannot reach sqs (run `bun run infra:bootstrap` to create queues)')
+  if (!(error instanceof DependencyError)) throw error
+  logger.fatal({ err: error }, error.message)
   process.exit(1)
 }
 
