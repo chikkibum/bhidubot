@@ -70,3 +70,44 @@ test('ensureQueues is idempotent', async () => {
   const b = await ensureQueues(sqs, n)
   expect(b).toEqual(a)
 })
+
+test('a non-abort TimeoutError is logged and retried, not treated as a clean exit', async () => {
+  const errors: unknown[] = []
+  const log = { error: (...args: unknown[]) => errors.push(args) } as never
+  let calls = 0
+  const ac = new AbortController()
+  const fake = {
+    send: async (cmd: { constructor: { name: string } }) => {
+      if (cmd.constructor.name === 'DeleteMessageCommand') return {}
+      calls++
+      if (calls === 1) {
+        const e = new Error('socket timeout')
+        e.name = 'TimeoutError'
+        throw e
+      }
+      return {
+        Messages: [
+          {
+            MessageId: 'm1',
+            ReceiptHandle: 'r1',
+            Body: JSON.stringify({ type: 'system.ping', payload: { note: 'x' } }),
+          },
+        ],
+      }
+    },
+  }
+  let handled = 0
+  await startConsumer({
+    sqs: fake as never,
+    queueUrl: 'http://x/q',
+    logger: log,
+    signal: ac.signal,
+    handle: async () => {
+      handled++
+      ac.abort()
+    },
+  })
+  expect(errors.length).toBe(1)
+  expect(handled).toBe(1)
+  expect(calls).toBe(2)
+})

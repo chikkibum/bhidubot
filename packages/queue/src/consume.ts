@@ -9,11 +9,6 @@ import type { JobContext } from './jobs'
 
 const ERROR_BACKOFF_MS = 1000
 
-function isAbort(err: unknown): boolean {
-  const name = (err as { name?: string } | null)?.name
-  return name === 'AbortError' || name === 'TimeoutError'
-}
-
 function sleep(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
     if (signal.aborted) return resolve()
@@ -81,7 +76,7 @@ export async function startConsumer(opts: {
       )
       for (const message of res.Messages ?? []) await processMessage(message)
     } catch (err) {
-      if (signal.aborted || isAbort(err)) break
+      if (signal.aborted) break
       logger.error({ err }, 'queue receive failed; backing off')
       await sleep(ERROR_BACKOFF_MS, signal)
     }
