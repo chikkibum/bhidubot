@@ -3,6 +3,7 @@ import { makeTestApp, type TestApp } from '@bhidubot/api/testing'
 import { jobRuns } from '@bhidubot/db'
 import { createLogger } from '@bhidubot/observability'
 import { startConsumer } from '@bhidubot/queue'
+import { eq } from 'drizzle-orm'
 import { createHandlers } from './handlers'
 import { runJob } from './run-job'
 
@@ -35,11 +36,14 @@ test('dev ping flows api → sqs → worker with one trace id', async () => {
     signal: ac.signal,
     waitTimeSeconds: 1,
     handle: async (type, payload, ctx) => {
-      await runJob({ db: t.db, logger, handlers: createHandlers(logger) }, type, payload, ctx)
-      ac.abort()
+      try {
+        await runJob({ db: t.db, logger, handlers: createHandlers(logger) }, type, payload, ctx)
+      } finally {
+        ac.abort()
+      }
     },
   })
 
-  const [row] = await t.db.select().from(jobRuns)
+  const [row] = await t.db.select().from(jobRuns).where(eq(jobRuns.id, jobId))
   expect(row).toMatchObject({ id: jobId, status: 'succeeded', traceId })
 })

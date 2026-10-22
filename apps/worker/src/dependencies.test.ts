@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { assertDependencies, createSqsClient } from '@bhidubot/queue'
+import { assertDependencies, createSqsClient, getQueueUrl } from '@bhidubot/queue'
 
 const sqs = createSqsClient({
   AWS_ENDPOINT_URL: 'http://localhost:4566',
@@ -31,4 +31,54 @@ test('assertDependencies names sqs when the queue is missing', async () => {
       timeoutMs: 2000,
     }),
   ).rejects.toThrow('Cannot reach sqs')
+})
+
+/** A TCP server that accepts connections and never answers. */
+function hangingServer() {
+  const server = Bun.listen({ hostname: '127.0.0.1', port: 0, socket: { data() {}, open() {} } })
+  return { port: server.port, stop: () => server.stop(true) }
+}
+
+test('a hanging postgres hits the timer path and is named', async () => {
+  const hang = hangingServer()
+  try {
+    const started = Date.now()
+    await expect(
+      assertDependencies({
+        databaseUrl: `postgres://x:y@127.0.0.1:${hang.port}/none`,
+        sqs,
+        queueUrl: 'http://localhost:4566/000000000000/none',
+        timeoutMs: 500,
+      }),
+    ).rejects.toThrow('Cannot reach postgres: timed out after 500ms')
+    expect(Date.now() - started).toBeLessThan(1500)
+  } finally {
+    hang.stop()
+  }
+})
+
+test('a hanging sqs endpoint is bounded and reported alongside a postgres failure', async () => {
+  const hang = hangingServer()
+  try {
+    const hungSqs = createSqsClient({
+      AWS_ENDPOINT_URL: `http://127.0.0.1:${hang.port}`,
+      AWS_REGION: 'us-east-1',
+      AWS_ACCESS_KEY_ID: 'test',
+      AWS_SECRET_ACCESS_KEY: 'test',
+    } as never)
+    const started = Date.now()
+    const err = await assertDependencies({
+      databaseUrl: 'postgres://x:y@localhost:5999/none',
+      sqs: hungSqs,
+      queueUrl: `http://127.0.0.1:${hang.port}/000000000000/q`,
+      timeoutMs: 500,
+    }).catch((e) => e)
+    expect(err.message).toContain('Cannot reach postgres')
+    expect(err.message).toContain('Cannot reach sqs: timed out after 500ms')
+    expect(err.dependency).toBe('postgres')
+    expect(Date.now() - started).toBeLessThan(1500)
+    await expect(getQueueUrl(hungSqs, 'q', 500)).rejects.toThrow('Cannot reach sqs')
+  } finally {
+    hang.stop()
+  }
 })
