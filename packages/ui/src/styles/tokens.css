@@ -1,0 +1,79 @@
+/*
+ * bhidubot design tokens. Source of truth: docs/design/DESIGN.md (Linear).
+ *
+ * Dark values are verbatim from DESIGN.md. Light values are derived from its inverse tokens
+ * (inverse-canvas #ffffff, inverse-surface-1 #f5f6f6, ink near-black) and chosen to pass
+ * src/styles/contrast.test.ts. Every colour the contrast test reads is a #rrggbb literal.
+ *
+ * Dark is also the default for :root without a data-theme attribute, so the first paint before
+ * the app resolves the theme is dark rather than a white flash.
+ */
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --canvas: #010102;
+  --surface-1: #0f1011;
+  --surface-2: #141516;
+  --surface-3: #18191a;
+  --surface-4: #191a1b;
+  --hairline: #23252a;
+  --hairline-strong: #34343a;
+
+  --ink: #f7f8f8;
+  --ink-muted: #d0d6e0;
+  --ink-subtle: #8a8f98;
+  --ink-tertiary: #62666d;
+
+  --primary: #5e6ad2;
+  /* DESIGN.md's hover lavender. White on it is 2.9:1, so it is used as accent text (7.3:1 on canvas), not as a fill behind white. */
+  --primary-hover: #828fff;
+  --primary-focus: #5e69d1;
+  --on-primary: #ffffff;
+  /* Hover fill for the primary button: a step darker so white stays above 4.5:1. */
+  --primary-fill-hover: #5360c9;
+
+  --success: #27a644;
+  /* Not in DESIGN.md (marketing has no error state); Linear's product red. */
+  --danger: #eb5757;
+
+  /* Floating surfaces: menus, dialogs, the command palette, toasts (DESIGN.md level 3). */
+  --popover: #18191a;
+  --popover-shadow: 0 0 0 1px rgb(0 0 0 / 0.2), 0 12px 32px -4px rgb(0 0 0 / 0.6);
+  --overlay: rgb(0 0 0 / 0.64);
+  /* "Subtle white edge highlight on the top edge of lifted panels." */
+  --edge-highlight: rgb(255 255 255 / 0.04);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --canvas: #ffffff;
+  --surface-1: #f5f6f6;
+  --surface-2: #eff0f1;
+  --surface-3: #e9eaec;
+  --surface-4: #e4e5e7;
+  --hairline: #e2e4e7;
+  --hairline-strong: #d0d3d8;
+
+  /* The dark ladder mirrored: dark's ink-tertiary is light's ink-subtle and vice versa. */
+  --ink: #08090a;
+  --ink-muted: #3c4149;
+  --ink-subtle: #62666d;
+  --ink-tertiary: #8a8f98;
+
+  --primary: #5e6ad2;
+  --primary-hover: #4e5ac2;
+  --primary-focus: #5e69d1;
+  --on-primary: #ffffff;
+  --primary-fill-hover: #4e5ac2;
+
+  --success: #1a7f37;
+  --danger: #c52828;
+
+  --popover: #ffffff;
+  --popover-shadow: 0 0 0 1px rgb(8 9 10 / 0.02), 0 8px 24px -6px rgb(8 9 10 / 0.12);
+  --overlay: rgb(8 9 10 / 0.24);
+  --edge-highlight: rgb(255 255 255 / 0.7);
+}
