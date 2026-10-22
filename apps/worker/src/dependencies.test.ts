@@ -1,5 +1,11 @@
 import { expect, test } from 'bun:test'
-import { assertDependencies, createSqsClient, getQueueUrl } from '@bhidubot/queue'
+import {
+  assertDependencies,
+  checkDependencies,
+  createSqsClient,
+  DependencyError,
+  getQueueUrl,
+} from '@bhidubot/queue'
 
 const sqs = createSqsClient({
   AWS_ENDPOINT_URL: 'http://localhost:4566',
@@ -80,5 +86,48 @@ test('a hanging sqs endpoint is bounded and reported alongside a postgres failur
     await expect(getQueueUrl(hungSqs, 'q', 500)).rejects.toThrow('Cannot reach sqs')
   } finally {
     hang.stop()
+  }
+})
+
+test('checkDependencies bounds resolve-then-attributes under one timer, and reports both failures', async () => {
+  // Answers GetQueueUrl after 300ms, then hangs on everything else.
+  const server = Bun.serve({
+    port: 0,
+    async fetch(req) {
+      const body = await req.text()
+      const target = req.headers.get('x-amz-target') ?? ''
+      if (target.includes('GetQueueUrl') || body.includes('GetQueueUrl')) {
+        await Bun.sleep(300)
+        return Response.json(
+          { QueueUrl: `${new URL(req.url).origin}/000000000000/q` },
+          { headers: { 'content-type': 'application/x-amz-json-1.0' } },
+        )
+      }
+      return new Promise<Response>(() => {})
+    },
+  })
+  try {
+    const slowSqs = createSqsClient({
+      AWS_ENDPOINT_URL: `http://127.0.0.1:${server.port}`,
+      AWS_REGION: 'us-east-1',
+      AWS_ACCESS_KEY_ID: 'test',
+      AWS_SECRET_ACCESS_KEY: 'test',
+    } as never)
+    const started = Date.now()
+    const err = await checkDependencies({
+      databaseUrl: 'postgres://x:y@localhost:5999/none',
+      sqs: slowSqs,
+      queueName: 'q',
+      timeoutMs: 500,
+    }).catch((e) => e)
+    expect(err).toBeInstanceOf(DependencyError)
+    expect(err.failures.map((f: { dependency: string }) => f.dependency)).toEqual([
+      'postgres',
+      'sqs',
+    ])
+    expect(err.message).toContain('Cannot reach sqs: timed out after 500ms')
+    expect(Date.now() - started).toBeLessThan(2000)
+  } finally {
+    server.stop(true)
   }
 })

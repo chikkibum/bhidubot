@@ -1,13 +1,7 @@
 import { loadEnv, workerEnvSchema } from '@bhidubot/config'
 import { createDb } from '@bhidubot/db'
 import { createLogger, initTracing } from '@bhidubot/observability'
-import {
-  assertDependencies,
-  createSqsClient,
-  DependencyError,
-  getQueueUrl,
-  startConsumer,
-} from '@bhidubot/queue'
+import { checkDependencies, createSqsClient, DependencyError, startConsumer } from '@bhidubot/queue'
 import { createHandlers } from './handlers'
 import { runJob } from './run-job'
 
@@ -21,8 +15,11 @@ const sqs = createSqsClient(env)
 
 let queueUrl: string
 try {
-  queueUrl = await getQueueUrl(sqs, env.SQS_JOBS_QUEUE)
-  await assertDependencies({ databaseUrl: env.DATABASE_URL, sqs, queueUrl })
+  queueUrl = await checkDependencies({
+    databaseUrl: env.DATABASE_URL,
+    sqs,
+    queueName: env.SQS_JOBS_QUEUE,
+  })
 } catch (error) {
   if (!(error instanceof DependencyError)) throw error
   logger.fatal({ err: error }, error.message)

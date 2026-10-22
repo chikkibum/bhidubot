@@ -3,13 +3,7 @@ import { apiEnvSchema, loadEnv } from '@bhidubot/config'
 import { createDb } from '@bhidubot/db'
 import { createSmtpMailer } from '@bhidubot/email'
 import { createLogger, initTracing } from '@bhidubot/observability'
-import {
-  assertDependencies,
-  createQueue,
-  createSqsClient,
-  DependencyError,
-  getQueueUrl,
-} from '@bhidubot/queue'
+import { checkDependencies, createQueue, createSqsClient, DependencyError } from '@bhidubot/queue'
 import { createApp } from './app'
 
 const env = loadEnv(apiEnvSchema)
@@ -22,8 +16,11 @@ const sqs = createSqsClient(env)
 // Fail fast, naming the dependency.
 let queueUrl: string
 try {
-  queueUrl = await getQueueUrl(sqs, env.SQS_JOBS_QUEUE)
-  await assertDependencies({ databaseUrl: env.DATABASE_URL, sqs, queueUrl })
+  queueUrl = await checkDependencies({
+    databaseUrl: env.DATABASE_URL,
+    sqs,
+    queueName: env.SQS_JOBS_QUEUE,
+  })
 } catch (error) {
   if (!(error instanceof DependencyError)) throw error
   logger.fatal({ err: error }, error.message)

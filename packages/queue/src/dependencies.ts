@@ -43,6 +43,28 @@ async function within<T>(work: (signal: AbortSignal) => Promise<T>, timeoutMs: n
   }
 }
 
+/** Adds the bootstrap hint only when the queue does not exist; the original error stays as `cause`. */
+function sqsError(error: unknown): unknown {
+  const missing =
+    error instanceof Error &&
+    (error.name === 'QueueDoesNotExist' || error.name === 'AWS.SimpleQueueService.NonExistentQueue')
+  return missing
+    ? new Error(`${error.message} (run \`bun run infra:bootstrap\` to create queues)`, {
+        cause: error,
+      })
+    : error
+}
+
+async function resolveQueueUrl(
+  sqs: SQSClient,
+  queueName: string,
+  abortSignal: AbortSignal,
+): Promise<string> {
+  const res = await sqs.send(new GetQueueUrlCommand({ QueueName: queueName }), { abortSignal })
+  if (!res.QueueUrl) throw new Error(`no URL for queue ${queueName}`)
+  return res.QueueUrl
+}
+
 /** Resolves a queue name to its URL, failing as a `DependencyError` for `sqs`, bounded by `timeoutMs`. */
 export async function getQueueUrl(
   sqs: SQSClient,
@@ -50,25 +72,9 @@ export async function getQueueUrl(
   timeoutMs = 5000,
 ): Promise<string> {
   try {
-    const res = await within(
-      (abortSignal) => sqs.send(new GetQueueUrlCommand({ QueueName: queueName }), { abortSignal }),
-      timeoutMs,
-    )
-    if (!res.QueueUrl) throw new Error(`no URL for queue ${queueName}`)
-    return res.QueueUrl
+    return await within((signal) => resolveQueueUrl(sqs, queueName, signal), timeoutMs)
   } catch (error) {
-    const missing =
-      error instanceof Error &&
-      (error.name === 'QueueDoesNotExist' ||
-        error.name === 'AWS.SimpleQueueService.NonExistentQueue')
-    throw new DependencyError(
-      'sqs',
-      missing
-        ? new Error(`${error.message} (run \`bun run infra:bootstrap\` to create queues)`, {
-            cause: error,
-          })
-        : error,
-    )
+    throw new DependencyError('sqs', sqsError(error))
   }
 }
 
@@ -83,31 +89,39 @@ async function checkPostgres(databaseUrl: string, timeoutMs: number): Promise<vo
 }
 
 /**
- * Fail-fast startup check: Postgres answers `select 1` and the queue exists. Both run concurrently, each
- * bounded by `timeoutMs`, so total time is about `timeoutMs`; every failure is reported.
+ * Fail-fast startup check: Postgres answers `select 1` and the queue exists. The two legs run concurrently;
+ * the SQS leg resolves the queue URL (when given `queueName`) and reads its attributes under ONE timer, so total
+ * time is about `timeoutMs`. Every failure is reported in one `DependencyError`. Resolves to the queue URL.
  */
+export async function checkDependencies(opts: {
+  databaseUrl: string
+  sqs: SQSClient
+  queueName?: string
+  queueUrl?: string
+  timeoutMs?: number
+}): Promise<string> {
+  const { databaseUrl, sqs, queueName, timeoutMs = 5000 } = opts
+  const sqsLeg = within(async (abortSignal) => {
+    const queueUrl = opts.queueUrl ?? (await resolveQueueUrl(sqs, queueName ?? '', abortSignal))
+    await sqs.send(new GetQueueAttributesCommand({ QueueUrl: queueUrl }), { abortSignal })
+    return queueUrl
+  }, timeoutMs).catch((error) => {
+    throw sqsError(error)
+  })
+  const [pg, queue] = await Promise.allSettled([checkPostgres(databaseUrl, timeoutMs), sqsLeg])
+  const failures: { dependency: Dependency; cause: unknown }[] = []
+  if (pg.status === 'rejected') failures.push({ dependency: 'postgres', cause: pg.reason })
+  if (queue.status === 'rejected') failures.push({ dependency: 'sqs', cause: queue.reason })
+  const first = failures[0]
+  if (first) throw new DependencyError(first.dependency, first.cause, failures)
+  return (queue as PromiseFulfilledResult<string>).value
+}
+
 export async function assertDependencies(opts: {
   databaseUrl: string
   sqs: SQSClient
   queueUrl: string
   timeoutMs?: number
 }): Promise<void> {
-  const { databaseUrl, sqs, queueUrl, timeoutMs = 5000 } = opts
-  const checks: [Dependency, Promise<unknown>][] = [
-    ['postgres', checkPostgres(databaseUrl, timeoutMs)],
-    [
-      'sqs',
-      within(
-        (abortSignal) =>
-          sqs.send(new GetQueueAttributesCommand({ QueueUrl: queueUrl }), { abortSignal }),
-        timeoutMs,
-      ),
-    ],
-  ]
-  const results = await Promise.allSettled(checks.map(([, p]) => p))
-  const failures = results.flatMap((r, i) =>
-    r.status === 'rejected' ? [{ dependency: checks[i]?.[0] ?? 'postgres', cause: r.reason }] : [],
-  )
-  const first = failures[0]
-  if (first) throw new DependencyError(first.dependency, first.cause, failures)
+  await checkDependencies(opts)
 }
