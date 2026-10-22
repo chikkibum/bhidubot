@@ -35,8 +35,8 @@
   --primary-fill-hover: #5360c9;
 
   --success: #27a644;
-  /* Not in DESIGN.md (marketing has no error state); Linear's product red. */
-  --danger: #eb5757;
+  /* Not in DESIGN.md (marketing has no error state): a Linear-like red that holds 4.5:1 on canvas, surface-1 and the highlighted-row fill. */
+  --danger: #f06060;
 
   /* Floating surfaces: menus, dialogs, the command palette, toasts (DESIGN.md level 3). */
   --popover: #18191a;
@@ -70,7 +70,7 @@
   --primary-fill-hover: #4e5ac2;
 
   --success: #1a7f37;
-  --danger: #c52828;
+  --danger: #bf2626;
 
   --popover: #ffffff;
   --popover-shadow: 0 0 0 1px rgb(8 9 10 / 0.02), 0 8px 24px -6px rgb(8 9 10 / 0.12);

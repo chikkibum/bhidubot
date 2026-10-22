@@ -42,3 +42,26 @@ test('motion uses the custom ease-out curve and is disabled under reduced motion
   expect(css).toContain('--ease-out: cubic-bezier(0.23, 1, 0.32, 1)')
   expect(css).toMatch(/prefers-reduced-motion:\s*reduce[\s\S]*transition-duration:\s*0s !important/)
 })
+
+test('radii are verbatim from DESIGN.md', async () => {
+  const css = await build([
+    'rounded-xs',
+    'rounded-sm',
+    'rounded-md',
+    'rounded-lg',
+    'rounded-xl',
+    'rounded-2xl',
+    'rounded-pill',
+  ])
+  for (const decl of [
+    '--radius-xs: 4px',
+    '--radius-sm: 6px',
+    '--radius-md: 8px',
+    '--radius-lg: 12px',
+    '--radius-xl: 16px',
+    '--radius-2xl: 24px',
+    '--radius-pill: 9999px',
+  ]) {
+    expect(css).toContain(decl)
+  }
+})

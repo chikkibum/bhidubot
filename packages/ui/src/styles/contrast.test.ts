@@ -21,6 +21,46 @@ test('dark tokens are verbatim from DESIGN.md', () => {
   expect(t['--hairline']).toBe('#23252a')
 })
 
+test('every constrained dark token is verbatim from DESIGN.md', () => {
+  const t = readTokens('dark')
+  const names = [
+    'canvas',
+    'surface-1',
+    'surface-2',
+    'surface-3',
+    'surface-4',
+    'hairline',
+    'hairline-strong',
+    'ink',
+    'ink-muted',
+    'ink-subtle',
+    'ink-tertiary',
+    'primary',
+    'primary-hover',
+    'primary-focus',
+    'on-primary',
+    'success',
+  ]
+  expect(Object.fromEntries(names.map((n) => [n, t[`--${n}`]]))).toEqual({
+    canvas: '#010102',
+    'surface-1': '#0f1011',
+    'surface-2': '#141516',
+    'surface-3': '#18191a',
+    'surface-4': '#191a1b',
+    hairline: '#23252a',
+    'hairline-strong': '#34343a',
+    ink: '#f7f8f8',
+    'ink-muted': '#d0d6e0',
+    'ink-subtle': '#8a8f98',
+    'ink-tertiary': '#62666d',
+    primary: '#5e6ad2',
+    'primary-hover': '#828fff',
+    'primary-focus': '#5e69d1',
+    'on-primary': '#ffffff',
+    success: '#27a644',
+  })
+})
+
 // Pairs the components rely on beyond the brief's minimum.
 for (const theme of ['dark', 'light'] as const) {
   const t = readTokens(theme)
@@ -60,3 +100,16 @@ test('readTokens only reads the requested theme block', () => {
   expect(readTokens('dark', css)).toEqual({ '--a': '#000000' })
   expect(readTokens('light', css)).toEqual({ '--a': '#ffffff' })
 })
+
+// Keyboard highlight in menus and the command palette (spec §9 visible focus): the row's 2px
+// primary-focus bar clears 3:1 against the popover and the hairline fill, and the row's text stays
+// readable on that fill.
+for (const theme of ['dark', 'light'] as const) {
+  const t = readTokens(theme)
+  test(`${theme}: highlighted menu and palette rows are visibly indicated`, () => {
+    expect(contrast(t['--primary-focus']!, t['--popover']!)).toBeGreaterThanOrEqual(3)
+    expect(contrast(t['--primary-focus']!, t['--hairline']!)).toBeGreaterThanOrEqual(3)
+    expect(contrast(t['--ink']!, t['--hairline']!)).toBeGreaterThanOrEqual(4.5)
+    expect(contrast(t['--danger']!, t['--hairline']!)).toBeGreaterThanOrEqual(4.5)
+  })
+}

@@ -1,6 +1,7 @@
 import { Menu } from '@base-ui/react/menu'
 import type { ComponentProps } from 'react'
 import { cn } from '../lib/cn'
+import { highlightIndicator } from '../lib/focus'
 import type { PartProps } from '../lib/types'
 
 export const DropdownMenu = Menu.Root
@@ -50,7 +51,8 @@ export function DropdownMenuContent({
 const itemClass = [
   'flex h-8 cursor-default select-none items-center gap-2 rounded-sm px-2 text-body-sm text-ink outline-none',
   'pointer-coarse:h-11 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-ink-subtle',
-  'data-highlighted:bg-hairline data-disabled:pointer-events-none data-disabled:text-ink-tertiary',
+  highlightIndicator.menu,
+  'data-disabled:pointer-events-none data-disabled:text-ink-tertiary',
 ]
 
 export interface DropdownMenuItemProps extends PartProps<typeof Menu.Item> {
@@ -68,7 +70,7 @@ export function DropdownMenuItem({
       data-variant={variant}
       className={cn(
         itemClass,
-        variant === 'danger' && 'text-danger [&_svg]:text-danger data-highlighted:bg-danger/10',
+        variant === 'danger' && 'text-danger [&_svg]:text-danger',
         className,
       )}
       {...props}

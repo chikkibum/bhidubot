@@ -2,6 +2,7 @@ import { Dialog as BaseDialog } from '@base-ui/react/dialog'
 import { Command as Cmdk } from 'cmdk'
 import type { ComponentProps, ReactNode } from 'react'
 import { cn } from '../lib/cn'
+import { fieldFocusWithin, highlightIndicator } from '../lib/focus'
 
 export function Command({ className, ...props }: ComponentProps<typeof Cmdk>) {
   return (
@@ -14,7 +15,7 @@ export function Command({ className, ...props }: ComponentProps<typeof Cmdk>) {
 
 export function CommandInput({ className, ...props }: ComponentProps<typeof Cmdk.Input>) {
   return (
-    <div className="flex items-center border-hairline border-b px-4">
+    <div className={cn('flex items-center border-hairline border-b px-4', fieldFocusWithin)}>
       <svg
         viewBox="0 0 16 16"
         fill="none"
@@ -75,7 +76,8 @@ export function CommandItem({ className, ...props }: ComponentProps<typeof Cmdk.
       className={cn(
         'flex h-9 cursor-default select-none items-center gap-2.5 rounded-sm px-2 text-body-sm text-ink',
         'pointer-coarse:h-11 [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-ink-subtle',
-        'data-[selected=true]:bg-hairline data-[disabled=true]:pointer-events-none data-[disabled=true]:text-ink-tertiary',
+        highlightIndicator.palette,
+        'data-[disabled=true]:pointer-events-none data-[disabled=true]:text-ink-tertiary',
         className,
       )}
       {...props}

@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
+import { highlightIndicator } from '../lib/focus'
 import { Avatar, initials } from './avatar'
 import { Button } from './button'
 import {
@@ -124,4 +125,31 @@ test('Button inside a form submits only when asked to', () => {
   expect(submits).toBe(0)
   fireEvent.click(screen.getByRole('button', { name: 'Save' }))
   expect(submits).toBe(1)
+})
+
+test('menu and palette rows mark the highlighted row with the primary-focus bar', async () => {
+  render(
+    <DropdownMenu>
+      <DropdownMenuTrigger>Team</DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuItem>Settings</DropdownMenuItem>
+        <DropdownMenuItem variant="danger">Leave team</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>,
+  )
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Team' })))
+  for (const name of ['Settings', 'Leave team']) {
+    expect((await screen.findByRole('menuitem', { name })).className).toContain(
+      highlightIndicator.menu,
+    )
+  }
+})
+
+test('the palette marks its selected row and rings its search field while focused', async () => {
+  render(<Palette />)
+  const option = await screen.findByRole('option', { name: 'Go to Home' })
+  expect(option.className).toContain(highlightIndicator.palette)
+  const field = screen.getByPlaceholderText('Type a command').parentElement as HTMLElement
+  expect(field.className).toContain('focus-within:')
+  expect(field.className).toContain('primary-focus')
 })

@@ -27,8 +27,8 @@ Kowalski's skills.
   level of `#f5f6f6`, too close to be a separate step, so it is not used. Ink is `#08090a` rather than the inverse
   `#000000`, carrying the canvas's faint blue tint. The ink ladder mirrors the dark one (light `ink-subtle` =
   dark `ink-tertiary` `#62666d`; light `ink-tertiary` = dark `ink-subtle` `#8a8f98`).
-- **Tokens DESIGN.md does not define**, added because the components need them: `--danger` (dark `#eb5757`,
-  Linear's product red; light `#c52828`), `--primary-fill-hover`, `--popover` (floating surfaces: surface-3 in
+- **Tokens DESIGN.md does not define**, added because the components need them: `--danger` (dark `#f06060`,
+  a Linear-like red; light `#bf2626`; both hold 4.5:1 on the highlighted-row fill), `--primary-fill-hover`, `--popover` (floating surfaces: surface-3 in
   dark, white in light), `--popover-shadow`, `--overlay` (DESIGN.md's black scrim), `--edge-highlight` (DESIGN.md's
   "subtle white edge highlight" on lifted panels).
 - **Contrast is a test.** `src/styles/contrast.test.ts` parses `tokens.css` and computes WCAG 2.2 ratios for both
@@ -59,13 +59,14 @@ Kowalski's skills.
 
 ### Deviations from DESIGN.md, and why
 
-| DESIGN.md                                      | Here                                                                                                                                              | Why                                                                                                                   |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `button-primary-hover`: white on `#828fff`     | Hover fill `--primary-fill-hover` (dark `#5360c9`, 5.4:1); `#828fff` kept verbatim as `--primary-hover` and used as accent text (7.3:1 on canvas) | White on `#828fff` is 2.9:1, an AA failure on the most-used control.                                                  |
-| Focus ring: 2px `primary-focus` at 50% opacity | 2px solid `primary-focus`                                                                                                                         | At 50% it is about 1.8:1 on canvas, under the 3:1 non-text minimum; solid it is 4.4:1.                                |
-| `text-input`: surface-1, no border named       | surface-1 with a `hairline-strong` border                                                                                                         | On a surface-1 card the field would otherwise vanish (taste-skill: controls one step stronger than structural lines). |
-| `eyebrow` (13px/500, +0.4px tracking)          | `text-label` (13px/500, no tracking) for form and menu labels                                                                                     | taste-skill bans eyebrow labels above headings; the size is kept for labels.                                          |
-| Danger/error styling not documented            | `--danger`, outlined danger buttons (no red fill)                                                                                                 | DESIGN.md's Known Gaps; destructive actions as outlined negative buttons (taste-skill).                               |
+| DESIGN.md                                      | Here                                                                                                                                                  | Why                                                                                                                   |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `button-primary-hover`: white on `#828fff`     | Hover fill `--primary-fill-hover` (dark `#5360c9`, 5.4:1); `#828fff` kept verbatim as `--primary-hover` and used as accent text (7.3:1 on canvas)     | White on `#828fff` is 2.9:1, an AA failure on the most-used control.                                                  |
+| Focus ring: 2px `primary-focus` at 50% opacity | 2px solid `primary-focus`                                                                                                                             | At 50% it is about 1.8:1 on canvas, under the 3:1 non-text minimum; solid it is 4.4:1.                                |
+| `text-input`: surface-1, no border named       | surface-1 with a `hairline-strong` border                                                                                                             | On a surface-1 card the field would otherwise vanish (taste-skill: controls one step stronger than structural lines). |
+| `eyebrow` (13px/500, +0.4px tracking)          | `text-label` (13px/500, no tracking) for form and menu labels                                                                                         | taste-skill bans eyebrow labels above headings; the size is kept for labels.                                          |
+| Danger/error styling not documented            | `--danger`, outlined danger buttons (no red fill)                                                                                                     | DESIGN.md's Known Gaps; destructive actions as outlined negative buttons (taste-skill).                               |
+| Menu highlight: a subtle fill only             | Hairline fill plus a 2px `primary-focus` bar on the row's leading edge; the palette search field gets a 2px `primary-focus` bottom line while focused | The fill alone is about 1.2:1 against the popover; keyboard focus must be visible at 3:1 (spec §9).                   |
 
 ## Why
 
